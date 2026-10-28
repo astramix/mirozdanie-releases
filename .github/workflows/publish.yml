@@ -1,0 +1,28 @@
+name: Публикация выпуска
+
+# Ветка assets/<тег> с архивами в dist/ → выпуск <тег> в Releases (тег с дефисом — pre-release).
+# Тег ставится на main, поэтому архивы «Source code» в выпуске — только README; ветка с архивами затем удаляется.
+on:
+  push:
+    branches: ['assets/**']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Тег из имени ветки
+        run: echo "TAG=${GITHUB_REF_NAME#assets/}" >> "$GITHUB_ENV"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.TAG }}
+          name: Мироздание ${{ env.TAG }}
+          target_commitish: main
+          prerelease: ${{ contains(env.TAG, '-') }}
+          body_path: dist/NOTES.md
+          files: dist/*.zip
+      - name: Удалить ветку с архивами
+        run: git push origin --delete "$GITHUB_REF_NAME"
